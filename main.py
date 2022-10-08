@@ -13,12 +13,11 @@ class VkPhoto:
     vk_params = {'v': 5.131, 'access_token': token}
 
     def __init__(self, user_id=None, count=5):
+        self.id = user_id
 
         if not isinstance(user_id, int):
-            user_url = 'https://api.vk.com/method/users.get'
-            user_id = requests.get(user_url, params={'user_ids': user_id, **VkPhoto.vk_params}).json()['response'][0][
-                'id']
-        self.id = user_id
+            self.id = self._get_id_by_username(user_id)
+
         self.count = count
         self.photo_params = {
             'owner_id': self.id, 'album_id': 'profile',
@@ -27,6 +26,12 @@ class VkPhoto:
         }
 
         self.response = requests.get(VkPhoto.url, params={**self.photo_params, **VkPhoto.vk_params})
+
+    def _get_id_by_username(self, user_id):
+        user_url = 'https://api.vk.com/method/users.get'
+        user_id = requests.get(user_url, params={'user_ids': user_id, **VkPhoto.vk_params}).json()['response'][0][
+            'id']
+        return user_id
 
     def download_photo(self):
         files, check_file_name = [], []
@@ -61,22 +66,18 @@ class YaUploader:
 
     def __init__(self, token):
         self.token = token
-
-    def get_headers(self):
-        return {"content-type": "application/json",
-                "Authorization": f'OAuth {self.token}'}
+        self.headers = {"content-type": "application/json",
+                        "Authorization": f'OAuth {token}'}
 
     def create_folder(self, folder_name):
-        headers = self.get_headers()
         params = {'path': folder_name}
-        requests.put('https://cloud-api.yandex.net/v1/disk/resources', headers=headers, params=params)
+        requests.put('https://cloud-api.yandex.net/v1/disk/resources', headers=self.headers, params=params)
         return folder_name
 
     def _get_upload_link(self, disk_space_path):
         upload_url = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
-        headers = self.get_headers()
         params = {'path': disk_space_path, 'overwrite': 'true'}
-        response = requests.get(upload_url, headers=headers, params=params)
+        response = requests.get(upload_url, headers=self.headers, params=params)
         return response.json()
 
     def upload(self, disk_file_path, files):
