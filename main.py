@@ -13,11 +13,7 @@ class VkPhoto:
     vk_params = {'v': 5.131, 'access_token': token}
 
     def __init__(self, user_id=None, count=5):
-        self.id = user_id
-
-        if not isinstance(user_id, int):
-            self.id = self._get_id_by_username(user_id)
-
+        self.id = self._check_user_id(user_id)
         self.count = count
         self.photo_params = {
             'owner_id': self.id, 'album_id': 'profile',
@@ -27,10 +23,11 @@ class VkPhoto:
 
         self.response = requests.get(VkPhoto.url, params={**self.photo_params, **VkPhoto.vk_params})
 
-    def _get_id_by_username(self, user_id):
-        user_url = 'https://api.vk.com/method/users.get'
-        user_id = requests.get(user_url, params={'user_ids': user_id, **VkPhoto.vk_params}).json()['response'][0][
-            'id']
+    def _check_user_id(self, user_id):
+        if not isinstance(user_id, int):
+            user_url = 'https://api.vk.com/method/users.get'
+            user_id = requests.get(user_url, params={'user_ids': user_id, **VkPhoto.vk_params}).json()['response'][0][
+                'id']
         return user_id
 
     def download_photo(self):
