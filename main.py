@@ -1,8 +1,8 @@
+import json
 import os
 import requests
 import time
 from datetime import datetime
-from pprint import pprint
 from tqdm import tqdm
 import my_token
 
@@ -56,7 +56,13 @@ class VkPhoto:
                 f.write(image)
 
             time.sleep(0.2)
+
+        self._saving_to_json(files)
         return files
+
+    def _saving_to_json(self, file):
+        with open('saved_photo.json', 'w', encoding='utf-8') as f:
+            json.dump(file, f, indent=3)
 
 
 class YaUploader:
@@ -93,7 +99,6 @@ if __name__ == '__main__':
         files = vk.download_photo()
         folder_name = yandex.create_folder('vk_photo')
         yandex.upload(folder_name, files)
-        pprint(files)
 
     except KeyError:
         print(f"Error. {vk.response.json()['error']['error_msg']}")
