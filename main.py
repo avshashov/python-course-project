@@ -13,7 +13,7 @@ class VkPhoto:
     def __init__(self, user_id=None, count=5, token=my_token.vk_token):
         self.token = token
         self.vk_params = {'v': 5.131, 'access_token': token}
-        self.id = self._check_user_id(user_id)
+        self.id = self._screen_name_to_id(user_id)
         self.count = count
 
         self.photo_params = {
@@ -24,7 +24,7 @@ class VkPhoto:
 
         self.response = requests.get(VkPhoto.url, params={**self.photo_params, **self.vk_params})
 
-    def _check_user_id(self, user_id):
+    def _screen_name_to_id(self, user_id):
         if not isinstance(user_id, int):
             user_url = 'https://api.vk.com/method/users.get'
             user_id = requests.get(user_url, params={'user_ids': user_id, **self.vk_params}).json()['response'][0][
