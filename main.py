@@ -8,29 +8,30 @@ import my_token
 
 
 class VkPhoto:
-    token = my_token.vk_token
     url = 'https://api.vk.com/method/photos.get'
-    vk_params = {'v': 5.131, 'access_token': token}
 
-    def __init__(self, user_id=None, count=5):
+    def __init__(self, user_id=None, count=5, token=my_token.vk_token):
+        self.token = token
+        self.vk_params = {'v': 5.131, 'access_token': token}
         self.id = self._check_user_id(user_id)
         self.count = count
+
         self.photo_params = {
             'owner_id': self.id, 'album_id': 'profile',
             'count': self.count,
             'extended': 1
         }
 
-        self.response = requests.get(VkPhoto.url, params={**self.photo_params, **VkPhoto.vk_params})
+        self.response = requests.get(VkPhoto.url, params={**self.photo_params, **self.vk_params})
 
     def _check_user_id(self, user_id):
         if not isinstance(user_id, int):
             user_url = 'https://api.vk.com/method/users.get'
-            user_id = requests.get(user_url, params={'user_ids': user_id, **VkPhoto.vk_params}).json()['response'][0][
+            user_id = requests.get(user_url, params={'user_ids': user_id, **self.vk_params}).json()['response'][0][
                 'id']
         return user_id
 
-    def download_photo(self):
+    def download_photos(self):
         files, check_file_name = [], []
         for photo in tqdm(self.response.json()['response']['items'], colour='#FFFFFF', desc='processing'):
             date = datetime.strftime(datetime.fromtimestamp(photo['date']), '%d-%m-%Y %H-%M-%S')
@@ -51,18 +52,18 @@ class VkPhoto:
                 os.mkdir(path)
 
             with open(os.path.join(path, file_name), 'wb') as f:
-                image = requests.get(url=photo['sizes'][-1]['url'], params={**VkPhoto.vk_params,
+                image = requests.get(url=photo['sizes'][-1]['url'], params={**self.vk_params,
                                                                             **self.photo_params}).content
                 f.write(image)
 
             time.sleep(0.2)
 
-        self._saving_to_json(files)
+        self._files_to_json(files)
         return files
 
-    def _saving_to_json(self, file):
+    def _files_to_json(self, files):
         with open('saved_photo.json', 'w', encoding='utf-8') as f:
-            json.dump(file, f, indent=3)
+            json.dump(files, f, indent=3)
 
 
 class YaUploader:
@@ -96,7 +97,7 @@ if __name__ == '__main__':
     yandex = YaUploader(my_token.ya_token)
 
     try:
-        files = vk.download_photo()
+        files = vk.download_photos()
         folder_name = yandex.create_folder('vk_photo')
         yandex.upload(folder_name, files)
 

@@ -6,5 +6,8 @@
 к названию добавляется дата загрузки фотографии в профиль.  
 
 2.  Информация по скопированным фотографиям сохраняется в json-файл.
+3. Все токены хранятся в файле my_token.py в переменных ya_token и vk_token.
 3. Ссылка на генерацию токена для [Яндекс.Диск.](https://yandex.ru/dev/disk/poligon/)
-4.  Ссылка на генерацию токена для [ВКонтакте.](https://oauth.vk.com/authorize?client_id=id_приложения&scope=методы&response_type=token)
+4.  Ссылка на генерацию токена для [ВКонтакте.](https://oauth.vk.com/authorize?client_id=id_приложения&scope=users,photos&response_type=token) В параметрах URL заменить "id_приложения" на реальный id (получаем по [ссылке](https://dev.vk.com/) при создании 
+   приложения).
+5. Зависимости указаны в файле [requirements.txt](https://github.com/avshashov/python-course-project/blob/main/requirements.txt). Установка "python -m pip install -r requirements. txt".
