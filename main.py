@@ -1,5 +1,4 @@
 import json
-import os
 import requests
 import time
 from datetime import datetime
@@ -31,15 +30,20 @@ class VkPhoto:
                 'id']
         return user_id
 
-    def download_photos(self):
-        files, check_file_name = [], []
+    def _correct_file_name(self, file_name, date):
+        if file_name in self.check_file_name:
+            file_name = file_name.replace('.jpg', f'_{date}.jpg')
+        self.check_file_name.append(file_name)
+        return file_name
+
+    def data_preparation(self):
+        files, self.check_file_name = [], []
+        files_to_upload = []
         for photo in tqdm(self.response.json()['response']['items'], colour='#FFFFFF', desc='processing'):
             date = datetime.strftime(datetime.fromtimestamp(photo['date']), '%d-%m-%Y %H-%M-%S')
 
             file_name = f"{photo['likes']['count']}.jpg"
-            if file_name in check_file_name:
-                file_name = file_name.replace('.jpg', f'_{date}.jpg')
-            check_file_name.append(file_name)
+            file_name = self._correct_file_name(file_name, date)
             photo_description = {
                 'file_name': file_name,
                 'size': photo['sizes'][-1]['type'],
@@ -47,19 +51,14 @@ class VkPhoto:
 
             files.append(photo_description)
 
-            path = os.path.join(os.getcwd(), 'photo to upload')
-            if not os.path.exists(path):
-                os.mkdir(path)
-
-            with open(os.path.join(path, file_name), 'wb') as f:
-                image = requests.get(url=photo['sizes'][-1]['url'], params={**self.vk_params,
-                                                                            **self.photo_params}).content
-                f.write(image)
+            file_url = photo['sizes'][-1]['url']
+            files_to_upload.append({'file_name': file_name, 'file_url': file_url})
 
             time.sleep(0.2)
 
         self._files_to_json(files)
-        return files
+
+        return files_to_upload
 
     def _files_to_json(self, files):
         with open('saved_photo.json', 'w', encoding='utf-8') as f:
@@ -78,16 +77,11 @@ class YaUploader:
         requests.put('https://cloud-api.yandex.net/v1/disk/resources', headers=self.headers, params=params)
         return folder_name
 
-    def _get_upload_link(self, disk_space_path):
+    def upload(self, disk_folder, files):
         upload_url = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
-        params = {'path': disk_space_path, 'overwrite': 'true'}
-        response = requests.get(upload_url, headers=self.headers, params=params)
-        return response.json()
-
-    def upload(self, disk_file_path, files):
         for file in tqdm(files, colour='#FFFFFF', desc='upload to yandex'):
-            href = self._get_upload_link(disk_space_path=f"{disk_file_path}/{file['file_name']}").get('href', '')
-            requests.put(href, data=open(os.path.join(os.getcwd(), 'photo to upload', file['file_name']), 'rb'))
+            params = {'path': f"{disk_folder}/{file['file_name']}", 'url': file['file_url']}
+            requests.post(upload_url, headers=self.headers, params=params)
             time.sleep(0.2)
 
 
@@ -97,7 +91,7 @@ if __name__ == '__main__':
     yandex = YaUploader(my_token.ya_token)
 
     try:
-        files = vk.download_photos()
+        files = vk.data_preparation()
         folder_name = yandex.create_folder('vk_photo')
         yandex.upload(folder_name, files)
 
